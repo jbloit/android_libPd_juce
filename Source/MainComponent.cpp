@@ -8,6 +8,11 @@
 
 #include "MainComponent.h"
 
+
+
+using namespace std;
+using namespace pd;
+
 //==============================================================================
 MainComponent::MainComponent()
 {
@@ -27,6 +32,24 @@ MainComponent::MainComponent()
         // Specify the number of input and output channels that we want to open
         setAudioChannels (2, 2);
     }
+
+    // init pd
+    //
+    // set 4th arg to true for queued message passing using an internal ringbuffer
+    //
+    // in this test, messages should return immediately when not queued otherwise
+    // they should all return at once when pd is processing at the end of this
+    // function
+    //
+    int srate = 44100;
+    if(!pd.init(1, 2, srate, true)) {
+        cerr << "Could not init pd" << endl;
+        exit(1);
+    }
+
+
+
+
 }
 
 MainComponent::~MainComponent()
