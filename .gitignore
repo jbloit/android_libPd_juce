@@ -1,2 +1,4 @@
 Builds
 JuceLibraryCode
+!Builds/Android/app/build.gradle
+!Builds/Android/app/CMakeLists.txt
