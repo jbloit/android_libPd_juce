@@ -1,4 +1,13 @@
-Builds
+Builds/Android/app/*
 JuceLibraryCode
 !Builds/Android/app/build.gradle
 !Builds/Android/app/CMakeLists.txt
+Builds/MacOSX
+Builds/Android/gradle
+Builds/Android/.gradle
+settings.gradle
+local.properties
+gradlew.bat
+gradlew
+Builds/Android/build.gradle
+Android_libPd_juce.iml
