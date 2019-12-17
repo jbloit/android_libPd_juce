@@ -39,11 +39,15 @@ MainComponent::MainComponent()
     }
 
 
-    StringRef sr = "pd";
-    patchfile = File::createTempFile(sr);
+    patchfile = File::getSpecialLocation(File::userApplicationDataDirectory).getChildFile("whatever.pd");
+    patchfile.create();
 
-    //patchfile = File::getSpecialLocation(File::currentApplicationFile).getChildFile("whatever.pd");
 
+    if (patchfile.hasWriteAccess()){
+        DBG( "patch file write access");
+    } else {
+        DBG( "patch file NOT write access");
+    }
 
 
     DBG( "patch file : " << patchfile.getFullPathName() );
@@ -51,6 +55,8 @@ MainComponent::MainComponent()
     FileOutputStream stream (patchfile);
     bool writeOk = false;
     if (stream.openedOk()){
+        stream.setPosition (0);
+        stream.truncate();
         writeOk = stream.write(BinaryData::test_pd, BinaryData::test_pdSize);
         stream.flush() ;
     }
