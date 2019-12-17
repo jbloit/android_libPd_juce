@@ -35,19 +35,31 @@ public:
     void paint (Graphics& g) override;
     void resized() override;
 
+
+
+    // Patch loading
+    void reloadPatch(double sampleRate);
+    void setPatchFile(File file);
+    File getPatchFile();
+        bool patchLoadError = false;
+    bool isPdComputingAudio = false;
+
 private:
     //==============================================================================
     // Your private member variables go here...
 
+    int numOutputs = 2;
+    int numInputs = 0;
 
+    ScopedPointer<pd::PdBase> pd;
 
-     ScopedPointer<pd::PdBase> pd;
-    bool isPdComputingAudio = false;
     File patchfile;
     pd::Patch patch;
-    float inbuf[64], outbuf[128];
     String status = "status string";
-    bool patchLoadError = false;
+
+
+    HeapBlock<float> pdInBuffer, pdOutBuffer;
+    double cachedSampleRate;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

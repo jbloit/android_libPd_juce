@@ -30,14 +30,6 @@ MainComponent::MainComponent()
     // function
     //
 
-    pd = new pd::PdBase;
-
-    int srate = 44100;
-    if(!pd->init(1, 2, srate, true)) {
-        cerr << "Could not init pd" << endl;
-        exit(1);
-    }
-
 
     patchfile = File::getSpecialLocation(File::userApplicationDataDirectory).getChildFile("whatever.pd");
     patchfile.create();
@@ -67,23 +59,10 @@ MainComponent::MainComponent()
     }
     DBG( "patch file size: " << patchfile.getSize() );
 
-    patch = pd->openPatch (patchfile.getFileName().toStdString(), patchfile.getParentDirectory().getFullPathName().toStdString());
 
+    setPatchFile(patchfile);
+    reloadPatch(44100);
 
-
-    if (patch.isValid()) {
-        pd->computeAudio (true);
-        isPdComputingAudio = true;
-        if(!patchLoadError) {
-            status = "Patch loaded successfully";
-        }
-        patchLoadError = false;
-    } else {
-        status = "Selected patch is not valid";
-        patchLoadError = true;
-    }
-
-     DBG( "status: " << status );
 }
 
 MainComponent::~MainComponent()
@@ -108,11 +87,45 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 {
     // Your audio-processing code goes here!
 
-    // For more details, see the help for AudioProcessor::getNextAudioBlock()
 
-    // Right now we are not producing any data, in which case we need to clear the buffer
-    // (to prevent the output of random noise)
-    bufferToFill.clearActiveBufferRegion();
+    if (isPdComputingAudio){
+
+        int len = bufferToFill.numSamples;
+        int idx = 0;
+
+        // this can be mono on devices where there is only one Speaker, or stereo when headphones are plugged in.
+        int deviceOutputChennelCount = bufferToFill.buffer->getNumChannels();
+        int stride = deviceOutputChennelCount > 1 ? 1 : 2;
+
+        while (len > 0)
+        {
+            int max = jmin (len, pd->blockSize());
+
+            pd->processFloat (1, pdInBuffer.getData(), pdOutBuffer.getData());
+
+            /* write-back */
+
+
+            {
+                const float* srcBuffer = pdOutBuffer.getData();
+                for (int i = 0; i < max; ++i)
+                {
+
+                    for (int channelIndex = 0; channelIndex < deviceOutputChennelCount; ++channelIndex){
+                        bufferToFill.buffer->getWritePointer(channelIndex) [idx + i] = *srcBuffer;
+                        srcBuffer += stride;
+                    }
+                }
+            }
+
+
+            idx += max;
+            len -= max;
+        }
+    } else {
+        bufferToFill.clearActiveBufferRegion();
+    }
+
 }
 
 void MainComponent::releaseResources()
@@ -138,3 +151,72 @@ void MainComponent::resized()
     // If you add any child components, this is where you should
     // update their positions.
 }
+
+
+void MainComponent::reloadPatch (double sampleRate)
+{
+
+    if (sampleRate) {
+        cachedSampleRate = sampleRate;
+    } else {
+        sampleRate = cachedSampleRate;
+    }
+
+    if (pd) {
+        pd->computeAudio(false);
+        isPdComputingAudio = false;
+        pd->closePatch(patch);
+    }
+
+    pd = new pd::PdBase;
+    pd->init (numInputs, numOutputs, sampleRate);
+
+    //receiver = new PatchReceiver;
+    //pd->setReceiver(receiver);
+
+
+    pdInBuffer.calloc (pd->blockSize() * numInputs);
+    pdOutBuffer.calloc (pd->blockSize() * numOutputs);
+
+
+    if (!patchfile.exists()) {
+        if (patchfile.getFullPathName().toStdString() != "") {
+            status = "File does not exist";
+        }
+        // else keeps select patch message
+        return;
+    }
+
+    if (patchfile.isDirectory()) {
+        status = "You selected a directory";
+        return;
+    }
+
+    patch = pd->openPatch (patchfile.getFileName().toStdString(), patchfile.getParentDirectory().getFullPathName().toStdString());
+
+    if (patch.isValid()) {
+        pd->computeAudio (true);
+        isPdComputingAudio = true;
+        if(!patchLoadError) {
+            status = "Patch loaded successfully";
+        }
+        patchLoadError = false;
+    } else {
+        status = "Selected patch is not valid";
+        patchLoadError = true;
+    }
+
+}
+
+void MainComponent::setPatchFile(File file)
+{
+    patchfile = file;
+}
+
+File MainComponent::getPatchFile()
+{
+    return patchfile;
+}
+
+
+
