@@ -40,14 +40,14 @@ private:
     // Your private member variables go here...
 
 
-    // our pd engine
-    PdBase pd;
 
-    // one input channel, two output channels
-    // block size 64, one tick per buffer
+     ScopedPointer<pd::PdBase> pd;
+    bool isPdComputingAudio = false;
+    File patchfile;
+    pd::Patch patch;
     float inbuf[64], outbuf[128];
-
-
+    String status = "status string";
+    bool patchLoadError = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

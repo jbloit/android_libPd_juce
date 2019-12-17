@@ -50,6 +50,7 @@ add_library( ${BINARY_NAME}
 
     SHARED
 
+    "../../../patches/test.pd"
     "../../../Source/MainComponent.h"
     "../../../Source/MainComponent.cpp"
     "../../../Source/Main.cpp"
@@ -1376,6 +1377,8 @@ add_library( ${BINARY_NAME}
     "../../../../../../LIBS/JUCE/modules/juce_opengl/juce_opengl.mm"
     "../../../../../../LIBS/JUCE/modules/juce_opengl/juce_opengl.h"
     "../../../JuceLibraryCode/AppConfig.h"
+    "../../../JuceLibraryCode/BinaryData.cpp"
+    "../../../JuceLibraryCode/BinaryData.h"
     "../../../JuceLibraryCode/include_juce_audio_basics.cpp"
     "../../../JuceLibraryCode/include_juce_audio_devices.cpp"
     "../../../JuceLibraryCode/include_juce_audio_formats.cpp"
@@ -1392,6 +1395,7 @@ add_library( ${BINARY_NAME}
     "../../../JuceLibraryCode/JuceHeader.h"
 )
 
+set_source_files_properties("../../../patches/test.pd" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties("../../../Source/MainComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties("../../../../../../LIBS/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties("../../../../../../LIBS/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -2716,6 +2720,7 @@ set_source_files_properties("../../../../../../LIBS/JUCE/modules/juce_opengl/juc
 set_source_files_properties("../../../../../../LIBS/JUCE/modules/juce_opengl/juce_opengl.mm" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties("../../../../../../LIBS/JUCE/modules/juce_opengl/juce_opengl.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties("../../../JuceLibraryCode/AppConfig.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties("../../../JuceLibraryCode/BinaryData.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties("../../../JuceLibraryCode/JuceHeader.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 
 find_library(log "log")

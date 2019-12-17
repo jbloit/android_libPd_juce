@@ -3,6 +3,7 @@
 <JUCERPROJECT id="RBlkNe" name="Android_libPd_juce" projectType="guiapp" jucerVersion="5.4.5">
   <MAINGROUP id="YaJNLM" name="Android_libPd_juce">
     <GROUP id="{ECE81FEF-3EE4-EA04-E580-D4884DCA020B}" name="Source">
+      <FILE id="xVHWzz" name="test.pd" compile="0" resource="1" file="patches/test.pd"/>
       <FILE id="zmSE7A" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="nntB6o" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
@@ -31,7 +32,8 @@
         <MODULEPATH id="juce_opengl" path="../../../LIBS/JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
-    <ANDROIDSTUDIO targetFolder="Builds/Android" androidAdditionalResourceFolders="resources">
+    <ANDROIDSTUDIO targetFolder="Builds/Android" androidAdditionalResourceFolders="patches&#10;"
+                   microphonePermissionNeeded="0">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug"/>
         <CONFIGURATION isDebug="0" name="Release"/>

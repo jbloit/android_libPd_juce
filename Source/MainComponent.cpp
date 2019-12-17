@@ -8,8 +8,6 @@
 
 #include "MainComponent.h"
 
-
-
 using namespace std;
 using namespace pd;
 
@@ -20,18 +18,8 @@ MainComponent::MainComponent()
     // you add any child components.
     setSize (800, 600);
 
-    // Some platforms require permissions to open input channels so request that here
-    if (RuntimePermissions::isRequired (RuntimePermissions::recordAudio)
-        && ! RuntimePermissions::isGranted (RuntimePermissions::recordAudio))
-    {
-        RuntimePermissions::request (RuntimePermissions::recordAudio,
-                                     [&] (bool granted) { if (granted)  setAudioChannels (2, 2); });
-    }
-    else
-    {
         // Specify the number of input and output channels that we want to open
-        setAudioChannels (2, 2);
-    }
+        setAudioChannels (0, 2);
 
     // init pd
     //
@@ -41,15 +29,55 @@ MainComponent::MainComponent()
     // they should all return at once when pd is processing at the end of this
     // function
     //
+
+    pd = new pd::PdBase;
+
     int srate = 44100;
-    if(!pd.init(1, 2, srate, true)) {
+    if(!pd->init(1, 2, srate, true)) {
         cerr << "Could not init pd" << endl;
         exit(1);
     }
 
 
+    StringRef sr = "pd";
+    patchfile = File::createTempFile(sr);
+
+    //patchfile = File::getSpecialLocation(File::currentApplicationFile).getChildFile("whatever.pd");
 
 
+
+    DBG( "patch file : " << patchfile.getFullPathName() );
+
+    FileOutputStream stream (patchfile);
+    bool writeOk = false;
+    if (stream.openedOk()){
+        writeOk = stream.write(BinaryData::test_pd, BinaryData::test_pdSize);
+        stream.flush() ;
+    }
+    if(writeOk){
+        DBG( "patch file write ok");
+    } else {
+        DBG( "patch file write NOT ok");
+    }
+    DBG( "patch file size: " << patchfile.getSize() );
+
+    patch = pd->openPatch (patchfile.getFileName().toStdString(), patchfile.getParentDirectory().getFullPathName().toStdString());
+
+
+
+    if (patch.isValid()) {
+        pd->computeAudio (true);
+        isPdComputingAudio = true;
+        if(!patchLoadError) {
+            status = "Patch loaded successfully";
+        }
+        patchLoadError = false;
+    } else {
+        status = "Selected patch is not valid";
+        patchLoadError = true;
+    }
+
+     DBG( "status: " << status );
 }
 
 MainComponent::~MainComponent()
