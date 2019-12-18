@@ -61,7 +61,7 @@ MainComponent::MainComponent()
 
 
     setPatchFile(patchfile);
-    reloadPatch(44100);
+    reloadPatch(NULL);
 
 }
 
@@ -81,6 +81,9 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // but be careful - it will be called on the audio thread, not the GUI thread.
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
+    cachedSampleRate = sampleRate;
+    DBG("DEVICE SAMPLE RATE: " << sampleRate);
+
 }
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
@@ -97,6 +100,8 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         int deviceOutputChennelCount = bufferToFill.buffer->getNumChannels();
         int stride = deviceOutputChennelCount > 1 ? 1 : 2;
 
+        //DBG("CHANNEL COUNT : " << deviceOutputChennelCount);
+
         while (len > 0)
         {
             int max = jmin (len, pd->blockSize());
@@ -104,7 +109,6 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             pd->processFloat (1, pdInBuffer.getData(), pdOutBuffer.getData());
 
             /* write-back */
-
 
             {
                 const float* srcBuffer = pdOutBuffer.getData();
@@ -162,12 +166,15 @@ void MainComponent::reloadPatch (double sampleRate)
         sampleRate = cachedSampleRate;
     }
 
+
+
     if (pd) {
         pd->computeAudio(false);
         isPdComputingAudio = false;
         pd->closePatch(patch);
     }
 
+    DBG("INIT PD WITH " << numInputs << " ins " << numOutputs << " outs & SR = " << sampleRate);
     pd = new pd::PdBase;
     pd->init (numInputs, numOutputs, sampleRate);
 
