@@ -37,12 +37,13 @@ public:
 
 
 
-    // Patch loading
+    // Pure data
     void reloadPatch(double sampleRate);
     void setPatchFile(File file);
     File getPatchFile();
         bool patchLoadError = false;
     bool isPdComputingAudio = false;
+    void updateAngleDelta();
 
 private:
     //==============================================================================
@@ -60,6 +61,10 @@ private:
 
     HeapBlock<float> pdInBuffer, pdOutBuffer;
     double cachedSampleRate;
+    double currentAngle = 0.0, angleDelta = 0.0;
+
+    int pdSampleIndex = 0;              // current read index in pd output buffer
+    bool consumedPdOutBuffer = true;    // are we out of samples from PD?
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

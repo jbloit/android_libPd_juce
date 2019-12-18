@@ -19,7 +19,10 @@ MainComponent::MainComponent()
     setSize (800, 600);
 
         // Specify the number of input and output channels that we want to open
-        setAudioChannels (0, 2);
+     setAudioChannels (0, 2);
+
+
+
 
     // init pd
     //
@@ -83,6 +86,15 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // For more details, see the help for AudioProcessor::prepareToPlay()
     cachedSampleRate = sampleRate;
     DBG("DEVICE SAMPLE RATE: " << sampleRate);
+    DBG("DEVICE SAMPLES PER BLOCK: " << samplesPerBlockExpected);
+    updateAngleDelta();
+
+
+    DBG("/////////// Device available buffer sizes");
+    Array<int> bufferSizes = deviceManager.getCurrentAudioDevice()->getAvailableBufferSizes();
+    for (int i = 0; i < bufferSizes.size(); ++i){
+        DBG("size : " << bufferSizes[i]);
+    }
 
 }
 
@@ -93,39 +105,90 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 
     if (isPdComputingAudio){
 
+
+        int deviceOutputChannelCount = bufferToFill.buffer->getNumChannels();
+        int stride = deviceOutputChannelCount > 1 ? 1 : 2;
+        const float* srcBuffer = pdOutBuffer.getData();
+
+        for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+
+        {
+            if ( consumedPdOutBuffer ) {
+                pd->processFloat (1, pdInBuffer.getData(), pdOutBuffer.getData());
+                consumedPdOutBuffer = false;
+                pdSampleIndex = 0;
+            }
+
+            for (int channelIndex = 0; channelIndex < deviceOutputChannelCount; ++channelIndex){
+                bufferToFill.buffer->getWritePointer(channelIndex) [sample] = *(srcBuffer + pdSampleIndex);
+                pdSampleIndex += stride;
+            }
+
+            if (pdSampleIndex >= pd->blockSize() * numOutputs - 1){
+                consumedPdOutBuffer = true;
+            }
+        }
+
+
+/*
         int len = bufferToFill.numSamples;
         int idx = 0;
 
         // this can be mono on devices where there is only one Speaker, or stereo when headphones are plugged in.
-        int deviceOutputChennelCount = bufferToFill.buffer->getNumChannels();
-        int stride = deviceOutputChennelCount > 1 ? 1 : 2;
+        int deviceOutputChannelCount = bufferToFill.buffer->getNumChannels();
+        int stride = deviceOutputChannelCount > 1 ? 1 : 2;
 
-        //DBG("CHANNEL COUNT : " << deviceOutputChennelCount);
-
+        DBG("==================");
+        DBG("BUFFER SIZE " << len );
         while (len > 0)
         {
             int max = jmin (len, pd->blockSize());
 
+            DBG("----");
+            DBG("max " << max);
+            DBG("len " << len);
+            DBG("idx " << idx);
+
             pd->processFloat (1, pdInBuffer.getData(), pdOutBuffer.getData());
 
-            /* write-back */
+            // write-back
 
             {
                 const float* srcBuffer = pdOutBuffer.getData();
                 for (int i = 0; i < max; ++i)
                 {
 
-                    for (int channelIndex = 0; channelIndex < deviceOutputChennelCount; ++channelIndex){
+                    for (int channelIndex = 0; channelIndex < deviceOutputChannelCount; ++channelIndex){
                         bufferToFill.buffer->getWritePointer(channelIndex) [idx + i] = *srcBuffer;
                         srcBuffer += stride;
                     }
                 }
             }
 
-
             idx += max;
             len -= max;
         }
+
+*/
+        /*
+
+        auto level = 0.125f;
+        auto* leftBuffer  = bufferToFill.buffer->getWritePointer (0, bufferToFill.startSample);
+        auto* rightBuffer = bufferToFill.buffer->getWritePointer (1, bufferToFill.startSample);
+
+        for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+        {
+            auto currentSample = (float) std::sin (currentAngle);
+
+
+
+            currentAngle += angleDelta;
+            leftBuffer[sample]  = currentSample * level;
+            rightBuffer[sample] = currentSample * level;
+        }
+        */
+
+
     } else {
         bufferToFill.clearActiveBufferRegion();
     }
@@ -185,6 +248,8 @@ void MainComponent::reloadPatch (double sampleRate)
     pdInBuffer.calloc (pd->blockSize() * numInputs);
     pdOutBuffer.calloc (pd->blockSize() * numOutputs);
 
+    DBG("ALLOCATE pdOutBuffer with size " << pd->blockSize() << " * " <<  numOutputs);
+
 
     if (!patchfile.exists()) {
         if (patchfile.getFullPathName().toStdString() != "") {
@@ -225,5 +290,9 @@ File MainComponent::getPatchFile()
     return patchfile;
 }
 
-
+void MainComponent::updateAngleDelta()
+{
+    auto cyclesPerSample = 440 / cachedSampleRate;         // [2]
+    angleDelta = cyclesPerSample * 2.0 * MathConstants<double>::pi;                // [3]
+}
 
