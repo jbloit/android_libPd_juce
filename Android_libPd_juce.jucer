@@ -3,7 +3,12 @@
 <JUCERPROJECT id="RBlkNe" name="Android_libPd_juce" projectType="guiapp" jucerVersion="5.4.5">
   <MAINGROUP id="YaJNLM" name="Android_libPd_juce">
     <GROUP id="{ECE81FEF-3EE4-EA04-E580-D4884DCA020B}" name="Source">
-      <FILE id="xVHWzz" name="test.pd" compile="0" resource="1" file="patches/test.pd"/>
+      <GROUP id="{68DF5545-04CB-9266-59D7-1F0836B36C77}" name="patches">
+        <GROUP id="{AE629AA6-B5B5-2D18-32F9-85CAF842DF25}" name="abstractions">
+          <FILE id="e08Xly" name="sweep.pd" compile="0" resource="1" file="patches/abstractions/sweep.pd"/>
+        </GROUP>
+        <FILE id="TEa0Fp" name="test.pd" compile="0" resource="1" file="patches/test.pd"/>
+      </GROUP>
       <FILE id="zmSE7A" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="nntB6o" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>

@@ -22,32 +22,68 @@ MainComponent::MainComponent()
      setAudioChannels (0, 2);
 
 
+    File assetsDir = File::getSpecialLocation(File::userApplicationDataDirectory).getChildFile("ovaom");
+    if (assetsDir.exists()){
+        bool deletedDir = assetsDir.deleteRecursively();
+        DBG("DO Delete assets dir");
+        if (deletedDir){
+           DBG("Deleted assets dir");
+        } else {
+            DBG("could NOT delete assets dir");
+        }
+    }
 
+    const Result createdAssetsDir = assetsDir.createDirectory();
+    if (createdAssetsDir.wasOk()){
+        DBG( "assets : created assets directory");
+    } else {
+        DBG( "assets : could NOT create assets directory: " << createdAssetsDir.getErrorMessage() );
+    }
 
-    // init pd
-    //
-    // set 4th arg to true for queued message passing using an internal ringbuffer
-    //
-    // in this test, messages should return immediately when not queued otherwise
-    // they should all return at once when pd is processing at the end of this
-    // function
-    //
+    int assetsCount = BinaryData::namedResourceListSize;
+    for (int i=0; i < assetsCount; ++i){
+        String fileName = String(BinaryData::originalFilenames[i]);
+        assetFile = assetsDir.getChildFile(BinaryData::originalFilenames[i]);
+        assetFile.create();
+        FileOutputStream stream (assetFile);
 
+        bool writeOk = false;
+        if (stream.openedOk()){
+            stream.setPosition (0);
+            stream.truncate();
+            int numBytes = 0;
+            BinaryData::getNamedResource(BinaryData::namedResourceList[i], numBytes);
+            writeOk = stream.write(BinaryData::getNamedResource(BinaryData::namedResourceList[i], numBytes), numBytes);
+            stream.flush() ;
+        }
 
-    patchfile = File::getSpecialLocation(File::userApplicationDataDirectory).getChildFile("whatever.pd");
-    patchfile.create();
+            if(writeOk){
+                DBG( "patch file write ok");
+            } else {
+                DBG( "patch file write NOT ok");
+            }
 
+        if (fileName.compare("test.pd") == 0){
+         //   setPatchFile(assetFile);
+            DBG( "FOUND MAIN PATCH");
+            setPatchFile(assetFile);
+        }
+    }
 
-    if (patchfile.hasWriteAccess()){
+/*
+    patchFile = File::getSpecialLocation(File::userApplicationDataDirectory).getChildFile("whatever.pd");
+    patchFile.create();
+
+    if (patchFile.hasWriteAccess()){
         DBG( "patch file write access");
     } else {
         DBG( "patch file NOT write access");
     }
 
 
-    DBG( "patch file : " << patchfile.getFullPathName() );
+    DBG( "patch file : " << patchFile.getFullPathName() );
 
-    FileOutputStream stream (patchfile);
+    FileOutputStream stream (patchFile);
     bool writeOk = false;
     if (stream.openedOk()){
         stream.setPosition (0);
@@ -60,10 +96,14 @@ MainComponent::MainComponent()
     } else {
         DBG( "patch file write NOT ok");
     }
-    DBG( "patch file size: " << patchfile.getSize() );
+*/
 
 
-    setPatchFile(patchfile);
+    DBG( "patch file size: " << patchFile.getSize() );
+
+    DBG( "patch file : " << patchFile.getFullPathName() );
+
+    //setPatchFile(patchFile);
     reloadPatch(NULL);
 
 }
@@ -90,12 +130,6 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     updateAngleDelta();
 
 
-    DBG("/////////// Device available buffer sizes");
-    Array<int> bufferSizes = deviceManager.getCurrentAudioDevice()->getAvailableBufferSizes();
-    for (int i = 0; i < bufferSizes.size(); ++i){
-        DBG("size : " << bufferSizes[i]);
-    }
-
 }
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
@@ -105,10 +139,11 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 
     if (isPdComputingAudio){
 
-
         int deviceOutputChannelCount = bufferToFill.buffer->getNumChannels();
         int stride = deviceOutputChannelCount > 1 ? 1 : 2;
         const float* srcBuffer = pdOutBuffer.getData();
+        DBG("AUDIO CB");
+
 
         for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
 
@@ -128,66 +163,6 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                 consumedPdOutBuffer = true;
             }
         }
-
-
-/*
-        int len = bufferToFill.numSamples;
-        int idx = 0;
-
-        // this can be mono on devices where there is only one Speaker, or stereo when headphones are plugged in.
-        int deviceOutputChannelCount = bufferToFill.buffer->getNumChannels();
-        int stride = deviceOutputChannelCount > 1 ? 1 : 2;
-
-        DBG("==================");
-        DBG("BUFFER SIZE " << len );
-        while (len > 0)
-        {
-            int max = jmin (len, pd->blockSize());
-
-            DBG("----");
-            DBG("max " << max);
-            DBG("len " << len);
-            DBG("idx " << idx);
-
-            pd->processFloat (1, pdInBuffer.getData(), pdOutBuffer.getData());
-
-            // write-back
-
-            {
-                const float* srcBuffer = pdOutBuffer.getData();
-                for (int i = 0; i < max; ++i)
-                {
-
-                    for (int channelIndex = 0; channelIndex < deviceOutputChannelCount; ++channelIndex){
-                        bufferToFill.buffer->getWritePointer(channelIndex) [idx + i] = *srcBuffer;
-                        srcBuffer += stride;
-                    }
-                }
-            }
-
-            idx += max;
-            len -= max;
-        }
-
-*/
-        /*
-
-        auto level = 0.125f;
-        auto* leftBuffer  = bufferToFill.buffer->getWritePointer (0, bufferToFill.startSample);
-        auto* rightBuffer = bufferToFill.buffer->getWritePointer (1, bufferToFill.startSample);
-
-        for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
-        {
-            auto currentSample = (float) std::sin (currentAngle);
-
-
-
-            currentAngle += angleDelta;
-            leftBuffer[sample]  = currentSample * level;
-            rightBuffer[sample] = currentSample * level;
-        }
-        */
-
 
     } else {
         bufferToFill.clearActiveBufferRegion();
@@ -251,20 +226,20 @@ void MainComponent::reloadPatch (double sampleRate)
     DBG("ALLOCATE pdOutBuffer with size " << pd->blockSize() << " * " <<  numOutputs);
 
 
-    if (!patchfile.exists()) {
-        if (patchfile.getFullPathName().toStdString() != "") {
+    if (!patchFile.exists()) {
+        if (patchFile.getFullPathName().toStdString() != "") {
             status = "File does not exist";
         }
         // else keeps select patch message
         return;
     }
 
-    if (patchfile.isDirectory()) {
+    if (patchFile.isDirectory()) {
         status = "You selected a directory";
         return;
     }
 
-    patch = pd->openPatch (patchfile.getFileName().toStdString(), patchfile.getParentDirectory().getFullPathName().toStdString());
+    patch = pd->openPatch (patchFile.getFileName().toStdString(), patchFile.getParentDirectory().getFullPathName().toStdString());
 
     if (patch.isValid()) {
         pd->computeAudio (true);
@@ -282,12 +257,12 @@ void MainComponent::reloadPatch (double sampleRate)
 
 void MainComponent::setPatchFile(File file)
 {
-    patchfile = file;
+    patchFile = file;
 }
 
 File MainComponent::getPatchFile()
 {
-    return patchfile;
+    return patchFile;
 }
 
 void MainComponent::updateAngleDelta()

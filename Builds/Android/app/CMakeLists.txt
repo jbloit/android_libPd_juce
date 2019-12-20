@@ -50,6 +50,7 @@ add_library( ${BINARY_NAME}
 
     SHARED
 
+    "../../../patches/abstractions/sweep.pd"
     "../../../patches/test.pd"
     "../../../Source/MainComponent.h"
     "../../../Source/MainComponent.cpp"
@@ -1395,6 +1396,7 @@ add_library( ${BINARY_NAME}
     "../../../JuceLibraryCode/JuceHeader.h"
 )
 
+set_source_files_properties("../../../patches/abstractions/sweep.pd" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties("../../../patches/test.pd" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties("../../../Source/MainComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties("../../../../../../LIBS/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h" PROPERTIES HEADER_FILE_ONLY TRUE)

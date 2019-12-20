@@ -54,7 +54,9 @@ private:
 
     ScopedPointer<pd::PdBase> pd;
 
-    File patchfile;
+    File patchFile;
+    File assetsDir;
+    File assetFile;
     pd::Patch patch;
     String status = "status string";
 

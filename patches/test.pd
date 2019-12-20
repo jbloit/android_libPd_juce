@@ -1,0 +1,12 @@
+#N canvas 1203 129 741 510 12;
+#X obj 104 34 osc~ 220;
+#X obj 290 94 osc~ 330;
+#X obj 96 148 *~ 0.1;
+#X obj 201 187 *~ 0.1;
+#X obj 141 244 dac~;
+#X obj 260 136 sweep;
+#X connect 0 0 2 0;
+#X connect 1 0 5 0;
+#X connect 2 0 4 0;
+#X connect 3 0 4 1;
+#X connect 5 0 3 0;
